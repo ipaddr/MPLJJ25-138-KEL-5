@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
+import 'screens/dashboard_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => SplashScreen(),
         '/login': (context) => LoginScreen(),
         '/register': (context) => RegisterScreen(),
+        '/dashboard': (context) => HomePage(),
       },
       // This is the theme of your application.
       //

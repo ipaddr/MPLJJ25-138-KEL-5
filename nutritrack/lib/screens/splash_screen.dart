@@ -35,7 +35,7 @@ class _SplashScreenState extends State<SplashScreen> {
           Padding(
             padding: const EdgeInsets.only(bottom: 20.0),
             child: Text(
-              '© 2025 NutriTrack by YourName', // Ganti dengan nama kamu / tim
+              '© 2025 NutriTrack by Diana & Falis',
               style: TextStyle(color: Colors.brown, fontSize: 14),
             ),
           ),
