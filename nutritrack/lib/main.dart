@@ -3,6 +3,13 @@ import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/admin_dashboard.dart';
+import 'screens/admin_data_penerima.dart';
+import 'screens/admin_data_pelaporan.dart';
+import 'screens/admin_profile.dart';
+import 'screens/distributor_dashboard.dart';
+import 'screens/distributor_data_pelaporan.dart';
+import 'screens/distributor_profile.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,13 +25,7 @@ class MyApp extends StatelessWidget {
       title: 'NutriTrack',
       theme: ThemeData(fontFamily: 'Arial'),
       debugShowCheckedModeBanner: false,
-      initialRoute: '/',
-      routes: {
-        '/': (context) => SplashScreen(),
-        '/login': (context) => LoginScreen(),
-        '/register': (context) => RegisterScreen(),
-        '/dashboard': (context) => HomePage(),
-      },
+      home: ProfileDistributor(),
       // This is the theme of your application.
       //
       // TRY THIS: Try running your application with "flutter run". You'll see
