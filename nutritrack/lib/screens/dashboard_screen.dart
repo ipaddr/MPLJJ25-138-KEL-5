@@ -1,259 +1,90 @@
 import 'package:flutter/material.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class DashboardPage extends StatelessWidget {
+  const DashboardPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Beranda'),
-        backgroundColor: Colors.orange[700],
+        title: Row(
+          children: [
+            Image.asset('assets/logo.png', height: 40, width: 40),
+            const SizedBox(width: 10),
+            const Text('Dashboard'),
+          ],
+        ),
       ),
-      body: const Center(
-        child: Text(
-          'Selamat Datang di NutriTrack',
-          style: TextStyle(fontSize: 18),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 10),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Pemantauan Distribusi',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildMetricItem(
+                          'Diktim',
+                          '12.637',
+                          Theme.of(context).primaryColor,
+                        ),
+                        _buildMetricItem(
+                          'Dizetma',
+                          '13.637',
+                          const Color(0xFFFF8C42),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
-}
 
-class PelaporanPage extends StatefulWidget {
-  const PelaporanPage({super.key});
-
-  @override
-  State<PelaporanPage> createState() => _PelaporanPageState();
-}
-
-class _PelaporanPageState extends State<PelaporanPage> {
-  final TextEditingController jumlahController = TextEditingController();
-  final TextEditingController deskripsiController = TextEditingController();
-  DateTime? selectedDate;
-
-  String kualitasMakanan = '';
-  String waktu = '';
-  String rating = '';
-
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2101),
-    );
-    if (picked != null) {
-      setState(() {
-        selectedDate = picked;
-      });
-    }
-  }
-
-  Widget buildButton(
-    String text,
-    String groupValue,
-    Function(String) onChanged,
-  ) {
-    final isSelected = groupValue == text;
-    return OutlinedButton(
-      style: OutlinedButton.styleFrom(
-        backgroundColor: isSelected ? Colors.orange[700] : Colors.white,
-        foregroundColor: isSelected ? Colors.white : Colors.black,
-        side: const BorderSide(color: Colors.orange),
-      ),
-      onPressed: () => onChanged(text),
-      child: Text(text),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pelaporan'),
-        backgroundColor: Colors.orange[700],
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Jumlah Makanan:",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              TextField(
-                controller: jumlahController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Masukkan jumlah makanan',
-                ),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                "Kualitas Makanan:",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Wrap(
-                spacing: 8,
-                children: [
-                  buildButton("Baik", kualitasMakanan, (val) {
-                    setState(() => kualitasMakanan = val);
-                  }),
-                  buildButton("Buruk", kualitasMakanan, (val) {
-                    setState(() => kualitasMakanan = val);
-                  }),
-                ],
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                "Waktu:",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Wrap(
-                spacing: 8,
-                children: [
-                  buildButton("Tepat Waktu", waktu, (val) {
-                    setState(() => waktu = val);
-                  }),
-                  buildButton("Terlambat", waktu, (val) {
-                    setState(() => waktu = val);
-                  }),
-                ],
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                "Tanggal:",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              TextField(
-                readOnly: true,
-                onTap: () => _selectDate(context),
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  hintText:
-                      selectedDate == null
-                          ? 'mm/dd/yyyy'
-                          : '${selectedDate!.month}/${selectedDate!.day}/${selectedDate!.year}',
-                ),
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                "Deskripsi:",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              TextField(
-                controller: deskripsiController,
-                maxLines: 5,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Tambahkan deskripsi tambahan...',
-                ),
-              ),
-              const SizedBox(height: 15),
-              const Text(
-                "Rating:",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Wrap(
-                spacing: 8,
-                children: [
-                  buildButton("Sangat Buruk", rating, (val) {
-                    setState(() => rating = val);
-                  }),
-                  buildButton("Buruk", rating, (val) {
-                    setState(() => rating = val);
-                  }),
-                  buildButton("Biasa", rating, (val) {
-                    setState(() => rating = val);
-                  }),
-                  buildButton("Baik", rating, (val) {
-                    setState(() => rating = val);
-                  }),
-                  buildButton("Sangat Baik", rating, (val) {
-                    setState(() => rating = val);
-                  }),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Center(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange[800],
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 40,
-                      vertical: 12,
-                    ),
-                  ),
-                  onPressed: () {
-                    // Contoh proses simpan data pelaporan
-                    print("Jumlah: ${jumlahController.text}");
-                    print("Kualitas: $kualitasMakanan");
-                    print("Waktu: $waktu");
-                    print("Tanggal: $selectedDate");
-                    print("Deskripsi: ${deskripsiController.text}");
-                    print("Rating: $rating");
-
-                    // Tampilkan dialog atau snackbar setelah submit
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Pelaporan berhasil dikirim'),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    "Kirim",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
+  Widget _buildMetricItem(String title, String value, Color color) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: color.withOpacity(0.3)),
+          ),
+          child: Icon(Icons.analytics, size: 30, color: color),
+        ),
+        const SizedBox(height: 10),
+        Text(title, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+        const SizedBox(height: 5),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: color,
           ),
         ),
-      ),
-    );
-  }
-}
-
-class DataPenerimaPage extends StatelessWidget {
-  const DataPenerimaPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Data Penerima'),
-        backgroundColor: Colors.orange[700],
-      ),
-      body: const Center(
-        child: Text(
-          'Daftar Data Penerima Makanan',
-          style: TextStyle(fontSize: 18),
-        ),
-      ),
-    );
-  }
-}
-
-class UserPage extends StatelessWidget {
-  const UserPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profil Pengguna'),
-        backgroundColor: Colors.orange[700],
-      ),
-      body: const Center(
-        child: Text(
-          'Profil Pengguna & Pengaturan',
-          style: TextStyle(fontSize: 18),
-        ),
-      ),
+      ],
     );
   }
 }
