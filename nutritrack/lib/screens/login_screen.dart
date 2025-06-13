@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
-import '/firebase_options.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,36 +15,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _isPasswordVisible = false;
-  bool _firebaseInitialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeFirebase();
-  }
-
-  Future<void> _initializeFirebase() async {
-    try {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-      setState(() => _firebaseInitialized = true);
-
-      // Optional: Check if user is already logged in
-      if (FirebaseAuth.instance.currentUser != null) {
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/dashboard');
-        }
-      }
-    } catch (e) {
-      debugPrint('Firebase initialization error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gagal menghubungkan ke server')),
-        );
-      }
-    }
-  }
 
   @override
   void dispose() {
@@ -56,100 +24,41 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-    if (!_firebaseInitialized) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Aplikasi sedang memulai, coba lagi')),
-      );
-      return;
-    }
-
     if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
+
       try {
-        // Close keyboard before login attempt
-        SystemChannels.textInput.invokeMethod('TextInput.hide');
-
-        setState(() => _isLoading = true);
-
-        debugPrint('Attempting login with: ${_emailController.text.trim()}');
-
-        final userCredential = await FirebaseAuth.instance
-            .signInWithEmailAndPassword(
-              email: _emailController.text.trim(),
-              password: _passwordController.text.trim(),
-            )
-            .timeout(
-              const Duration(seconds: 15),
-              onTimeout: () {
-                throw FirebaseAuthException(
-                  code: 'timeout',
-                  message: 'Koneksi timeout',
-                );
-              },
-            );
-
-        debugPrint('Login success for: ${userCredential.user?.uid}');
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
 
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/dashboard');
       } on FirebaseAuthException catch (e) {
-        _handleLoginError(e);
-      } catch (e) {
-        debugPrint('Login error: $e');
+        String errorMessage = 'Login gagal. Silakan coba lagi.';
+
+        if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+          errorMessage = 'Email atau password salah';
+        } else if (e.code == 'too-many-requests') {
+          errorMessage = 'Terlalu banyak percobaan. Coba lagi nanti.';
+        } else if (e.code == 'user-disabled') {
+          errorMessage = 'Akun ini dinonaktifkan.';
+        }
+
         if (!mounted) return;
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+        ).showSnackBar(SnackBar(content: Text(errorMessage)));
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Terjadi kesalahan')));
       } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
+        if (!mounted) return;
+        setState(() => _isLoading = false);
       }
-    }
-  }
-
-  void _handleLoginError(FirebaseAuthException e) {
-    debugPrint('Auth error: ${e.code} - ${e.message}');
-
-    String errorMessage;
-    switch (e.code) {
-      case 'user-not-found':
-        errorMessage = 'Email tidak terdaftar';
-        break;
-      case 'wrong-password':
-        errorMessage = 'Password salah';
-        break;
-      case 'invalid-email':
-        errorMessage = 'Format email tidak valid';
-        break;
-      case 'user-disabled':
-        errorMessage = 'Akun dinonaktifkan oleh admin';
-        break;
-      case 'too-many-requests':
-        errorMessage = 'Terlalu banyak percobaan. Coba lagi nanti';
-        break;
-      case 'network-request-failed':
-        errorMessage = 'Gagal terhubung ke internet';
-        break;
-      case 'operation-not-allowed':
-        errorMessage = 'Login dengan email tidak diaktifkan';
-        break;
-      case 'timeout':
-        errorMessage = 'Koneksi timeout, cek jaringan Anda';
-        break;
-      case 'INVALID_LOGIN_CREDENTIALS': // Newer Firebase versions
-        errorMessage = 'Email atau password salah';
-        break;
-      default:
-        errorMessage = 'Login gagal (${e.code})';
-    }
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          duration: const Duration(seconds: 3),
-        ),
-      );
     }
   }
 
@@ -180,7 +89,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
                     decoration: InputDecoration(
                       hintText: 'Email...',
                       filled: true,
@@ -195,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Email harus diisi';
                       }
-                      if (!value.contains('@') || !value.contains('.')) {
+                      if (!value.contains('@')) {
                         return 'Email tidak valid';
                       }
                       return null;
@@ -205,7 +113,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextFormField(
                     controller: _passwordController,
                     obscureText: !_isPasswordVisible,
-                    textInputAction: TextInputAction.done,
                     decoration: InputDecoration(
                       hintText: 'Password...',
                       filled: true,
@@ -237,7 +144,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       }
                       return null;
                     },
-                    onFieldSubmitted: (_) => _login(),
                   ),
                   const SizedBox(height: 24),
                   SizedBox(
@@ -302,8 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _resetPassword() async {
     final email = _emailController.text.trim();
 
-    if (email.isEmpty || !email.contains('@') || !email.contains('.')) {
-      if (!mounted) return;
+    if (email.isEmpty || !email.contains('@')) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Masukkan email yang valid')),
       );
@@ -315,18 +220,13 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Instruksi reset password telah dikirim ke email Anda'),
-          duration: Duration(seconds: 3),
+          content: Text('Link reset password telah dikirim ke email Anda'),
         ),
       );
-    } on FirebaseAuthException catch (e) {
-      debugPrint('Reset password error: ${e.code}');
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal mengirim email reset: ${e.message ?? e.code}'),
-          duration: const Duration(seconds: 3),
-        ),
+        SnackBar(content: Text('Gagal mengirim email reset: ${e.toString()}')),
       );
     }
   }

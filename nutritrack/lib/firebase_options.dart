@@ -7,9 +7,9 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: "AIzaSyAxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    appId: "1:1234567890:android:abc123def456",
-    messagingSenderId: "1234567890",
+    apiKey: "AIzaSyDQpxm3xuL95ioMj42j65wn01l7vOtg_Pk",
+    appId: "1:410853656795:android:d10897dc647eb40c98e4fe",
+    messagingSenderId: "410853656795",
     projectId: "nutritrack-app-89707",
     storageBucket: "nutritrack-app-89707.appspot.com",
   );
