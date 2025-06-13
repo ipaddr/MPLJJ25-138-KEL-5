@@ -1,10 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
+  Future<void> _signOut(BuildContext context) async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      // Navigate to login page or root after logout
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error signing out: ${e.toString()}')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final User? user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -22,17 +37,20 @@ class ProfilePage extends StatelessWidget {
             CircleAvatar(
               radius: 60,
               backgroundColor: Colors.transparent,
-              child: Image.asset('assets/logo.png'),
+              child:
+                  user?.photoURL != null
+                      ? ClipOval(child: Image.network(user!.photoURL!))
+                      : Image.asset('assets/logo.png'),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'SMKN 1 Bangkinang',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            Text(
+              user?.displayName ?? ' ',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'admsekolah@smknbkn.com',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+            Text(
+              user?.email ?? 'admsekolah@smknbkn.com',
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
             const SizedBox(height: 32),
             Card(
@@ -65,6 +83,24 @@ class ProfilePage extends StatelessWidget {
                         ),
                         child: const Text(
                           'Edit Profile',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => _signOut(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text(
+                          'Logout',
                           style: TextStyle(color: Colors.white),
                         ),
                       ),
