@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "410853656795",
+    "project_id": "nutritrack-app-89707",
+    "storage_bucket": "nutritrack-app-89707.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:410853656795:android:d10897dc647eb40c98e4fe",
+        "android_client_info": {
+          "package_name": "com.example.nutritrack"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDQpxm3xuL95ioMj42j65wn01l7vOtg_Pk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
