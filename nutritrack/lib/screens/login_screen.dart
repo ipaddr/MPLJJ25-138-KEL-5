@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,6 +15,13 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _isPasswordVisible = false;
+  final DatabaseReference _databaseRef = FirebaseDatabase.instance.ref();
+
+  @override
+  void initState() {
+    super.initState();
+    Firebase.initializeApp();
+  }
 
   @override
   void dispose() {
@@ -27,37 +35,105 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = true);
 
       try {
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
+        // Query database for user with matching email
+        final snapshot = await _databaseRef
+            .child('users')
+            .orderByChild('email')
+            .equalTo(_emailController.text.trim())
+            .once();
 
-        if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/dashboard');
-      } on FirebaseAuthException catch (e) {
-        String errorMessage = 'Login gagal. Silakan coba lagi.';
-
-        if (e.code == 'user-not-found' || e.code == 'wrong-password') {
-          errorMessage = 'Email atau password salah';
-        } else if (e.code == 'too-many-requests') {
-          errorMessage = 'Terlalu banyak percobaan. Coba lagi nanti.';
-        } else if (e.code == 'user-disabled') {
-          errorMessage = 'Akun ini dinonaktifkan.';
+        if (snapshot.snapshot.value == null) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Email tidak terdaftar')),
+          );
+          return;
         }
 
+        // Get the first user found (emails should be unique)
+        final userData = (snapshot.snapshot.value as Map).values.first;
+        
+        // Verify password
+        if (userData['password'] != _passwordController.text.trim()) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Password salah')),
+          );
+          return;
+        }
+
+        // Check account status
+        if (userData['status'] != 'active') {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Akun ini tidak aktif')),
+          );
+          return;
+        }
+
+        // Login successful - navigate based on role
         if (!mounted) return;
-        ScaffoldMessenger.of(
+        Navigator.pushReplacementNamed(
           context,
-        ).showSnackBar(SnackBar(content: Text(errorMessage)));
+          '/dashboard',
+          arguments: {
+            'userId': userData['id'],
+            'userRole': userData['role'],
+            'userName': userData['nama'],
+          },
+        );
+
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Terjadi kesalahan')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login gagal: ${e.toString()}')),
+        );
       } finally {
         if (!mounted) return;
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _resetPassword() async {
+    final email = _emailController.text.trim();
+
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Masukkan email yang valid')),
+      );
+      return;
+    }
+
+    try {
+      // Find user by email
+      final snapshot = await _databaseRef
+          .child('users')
+          .orderByChild('email')
+          .equalTo(email)
+          .once();
+
+      if (snapshot.snapshot.value == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Email tidak terdaftar')),
+        );
+        return;
+      }
+
+      // In a real app, you would send an email with password reset instructions
+      // This is just a simulation since we're not using Firebase Auth
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Silakan hubungi admin untuk reset password'),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memproses permintaan: ${e.toString()}')),
+      );
     }
   }
 
@@ -157,31 +233,29 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         elevation: 0,
                       ),
-                      child:
-                          _isLoading
-                              ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                              : const Text(
-                                'Login',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
                               ),
+                            )
+                          : const Text(
+                              'Login',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   TextButton(
-                    onPressed:
-                        _isLoading
-                            ? null
-                            : () => Navigator.pushNamed(context, '/register'),
+                    onPressed: _isLoading
+                        ? null
+                        : () => Navigator.pushNamed(context, '/register'),
                     child: Text(
                       'Belum Punya Akun? Register',
                       style: TextStyle(color: Colors.orange[800], fontSize: 14),
@@ -202,31 +276,5 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _resetPassword() async {
-    final email = _emailController.text.trim();
-
-    if (email.isEmpty || !email.contains('@')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Masukkan email yang valid')),
-      );
-      return;
-    }
-
-    try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Link reset password telah dikirim ke email Anda'),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal mengirim email reset: ${e.toString()}')),
-      );
-    }
   }
 }
