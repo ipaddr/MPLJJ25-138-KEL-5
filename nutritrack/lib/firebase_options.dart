@@ -12,5 +12,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: "410853656795",
     projectId: "nutritrack-app-89707",
     storageBucket: "nutritrack-app-89707.appspot.com",
+    databaseURL: "https://nutritrack-app-89707-default-rtdb.firebaseio.com",
   );
 }
