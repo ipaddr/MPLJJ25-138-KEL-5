@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class PelaporanDistribusiPage extends StatelessWidget {
-  const PelaporanDistribusiPage({super.key});
+class DistributorDashboardPage extends StatelessWidget {
+  const DistributorDashboardPage({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_core/firebase_core.dart';
 
@@ -35,58 +36,77 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = true);
 
       try {
-        // Query database for user with matching email
-        final snapshot = await _databaseRef
-            .child('users')
-            .orderByChild('email')
-            .equalTo(_emailController.text.trim())
-            .once();
+        // Authenticate with Firebase Auth
+        final credential = await FirebaseAuth.instance
+            .signInWithEmailAndPassword(
+              email: _emailController.text.trim(),
+              password: _passwordController.text.trim(),
+            );
 
-        if (snapshot.snapshot.value == null) {
+        // Get user data from Realtime Database
+        final userSnapshot =
+            await _databaseRef.child('users/${credential.user!.uid}').once();
+
+        if (userSnapshot.snapshot.value == null) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Email tidak terdaftar')),
+            const SnackBar(content: Text('Data pengguna tidak ditemukan')),
           );
           return;
         }
 
-        // Get the first user found (emails should be unique)
-        final userData = (snapshot.snapshot.value as Map).values.first;
-        
-        // Verify password
-        if (userData['password'] != _passwordController.text.trim()) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Password salah')),
-          );
-          return;
-        }
+        final userData = Map<String, dynamic>.from(
+          userSnapshot.snapshot.value as Map<dynamic, dynamic>,
+        );
 
         // Check account status
         if (userData['status'] != 'active') {
           if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Akun ini tidak aktif')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Akun ini tidak aktif')));
           return;
         }
 
-        // Login successful - navigate based on role
+        // Navigate based on role
         if (!mounted) return;
+
+        final routeName =
+            {
+              'sekolah': '/dashboard',
+              'admin': '/admin-dashboard',
+              'distributor': '/distributor-dashboard',
+            }[userData['role']] ??
+            '/dashboard';
+
         Navigator.pushReplacementNamed(
           context,
-          '/dashboard',
+          routeName,
           arguments: {
-            'userId': userData['id'],
+            'userId': credential.user!.uid,
             'userRole': userData['role'],
             'userName': userData['nama'],
+            'userEmail': userData['email'],
           },
         );
+      } on FirebaseAuthException catch (e) {
+        String errorMessage = 'Login gagal';
+        if (e.code == 'user-not-found') {
+          errorMessage = 'Email tidak terdaftar';
+        } else if (e.code == 'wrong-password') {
+          errorMessage = 'Password salah';
+        } else if (e.code == 'invalid-email') {
+          errorMessage = 'Format email tidak valid';
+        }
 
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(errorMessage)));
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login gagal: ${e.toString()}')),
+          SnackBar(content: Text('Terjadi kesalahan: ${e.toString()}')),
         );
       } finally {
         if (!mounted) return;
@@ -106,34 +126,30 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
-      // Find user by email
-      final snapshot = await _databaseRef
-          .child('users')
-          .orderByChild('email')
-          .equalTo(email)
-          .once();
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
 
-      if (snapshot.snapshot.value == null) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Email tidak terdaftar')),
-        );
-        return;
-      }
-
-      // In a real app, you would send an email with password reset instructions
-      // This is just a simulation since we're not using Firebase Auth
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Silakan hubungi admin untuk reset password'),
+          content: Text('Email reset password telah dikirim'),
+          duration: Duration(seconds: 5),
         ),
       );
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = 'Gagal mengirim email reset';
+      if (e.code == 'user-not-found') {
+        errorMessage = 'Email tidak terdaftar';
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(errorMessage)));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memproses permintaan: ${e.toString()}')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
     }
   }
 
@@ -165,20 +181,26 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
-                      hintText: 'Email...',
+                      labelText: 'Email',
                       filled: true,
-                      fillColor: Colors.grey[300],
+                      fillColor: Colors.grey[200],
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
                       prefixIcon: const Icon(Icons.email),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Email harus diisi';
                       }
-                      if (!value.contains('@')) {
+                      if (!RegExp(
+                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                      ).hasMatch(value)) {
                         return 'Email tidak valid';
                       }
                       return null;
@@ -189,9 +211,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     controller: _passwordController,
                     obscureText: !_isPasswordVisible,
                     decoration: InputDecoration(
-                      hintText: 'Password...',
+                      labelText: 'Password',
                       filled: true,
-                      fillColor: Colors.grey[300],
+                      fillColor: Colors.grey[200],
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -202,12 +224,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           _isPasswordVisible
                               ? Icons.visibility
                               : Icons.visibility_off,
+                          color: Colors.grey,
                         ),
                         onPressed: () {
                           setState(() {
                             _isPasswordVisible = !_isPasswordVisible;
                           });
                         },
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
                     ),
                     validator: (value) {
@@ -229,44 +256,60 @@ class _LoginScreenState extends State<LoginScreen> {
                         backgroundColor: Colors.orange[700],
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                         elevation: 0,
                       ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
+                      child:
+                          _isLoading
+                              ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 3,
+                                ),
+                              )
+                              : const Text(
+                                'Login',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            )
-                          : const Text(
-                              'Login',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                            ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: _isLoading
-                        ? null
-                        : () => Navigator.pushNamed(context, '/register'),
-                    child: Text(
-                      'Belum Punya Akun? Register',
-                      style: TextStyle(color: Colors.orange[800], fontSize: 14),
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('Belum punya akun?'),
+                      TextButton(
+                        onPressed:
+                            _isLoading
+                                ? null
+                                : () =>
+                                    Navigator.pushNamed(context, '/register'),
+                        child: Text(
+                          'Register disini',
+                          style: TextStyle(
+                            color: Colors.orange[800],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
                   TextButton(
                     onPressed: _isLoading ? null : _resetPassword,
                     child: Text(
                       'Lupa Password?',
-                      style: TextStyle(color: Colors.orange[800], fontSize: 14),
+                      style: TextStyle(
+                        color: Colors.orange[800],
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
