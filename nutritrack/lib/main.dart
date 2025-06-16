@@ -10,6 +10,8 @@ import 'screens/recipient_data.dart';
 import 'screens/user_profile.dart';
 import 'screens/splash_screen.dart';
 import 'firebase_options.dart';
+import 'screens/admin_login.dart';
+import 'screens/distributor_login.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,11 +38,7 @@ class NutriTrackApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: _buildAppTheme(),
       home: const AuthWrapper(),
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
-        '/dashboard': (context) => const MainNavigation(),
-      },
+      routes: {'/login': (context) => const DistributorLoginScreen()},
       // Add error handling for routes
       onUnknownRoute:
           (settings) => MaterialPageRoute(
