@@ -10,6 +10,8 @@ import 'screens/recipient_data.dart';
 import 'screens/user_profile.dart';
 import 'screens/splash_screen.dart';
 import 'firebase_options.dart';
+import 'screens/admin_login.dart';
+import 'screens/distributor_login.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
