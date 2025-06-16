@@ -38,7 +38,11 @@ class NutriTrackApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: _buildAppTheme(),
       home: const AuthWrapper(),
-      routes: {'/login': (context) => const DistributorLoginScreen()},
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/dashboard': (context) => const MainNavigation(),
+      },
       // Add error handling for routes
       onUnknownRoute:
           (settings) => MaterialPageRoute(
