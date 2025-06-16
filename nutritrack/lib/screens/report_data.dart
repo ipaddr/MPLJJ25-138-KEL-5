@@ -97,7 +97,7 @@ class _ReportDataPageState extends State<ReportDataPage> {
                               const SizedBox(height: 16),
                               ..._feedbacks.map((feedback) => 
                                 _buildFeedbackItem(context, feedback)
-                              ).toList(),
+                              ),
                             ],
                           ),
                         ),
