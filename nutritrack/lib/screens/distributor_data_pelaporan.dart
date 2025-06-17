@@ -14,7 +14,7 @@ class _PelaporanDistribusiState extends State<PelaporanDistribusi> {
   final TextEditingController _jumlahController = TextEditingController();
   final TextEditingController _tanggalController = TextEditingController();
   String? _selectedSchoolId;
-  Map<String, String> _schools = {}; // Stores schoolId: schoolName pairs
+  Map<String, String> _schools = {};
   bool _isLoadingSchools = true;
 
   @override
@@ -62,7 +62,6 @@ class _PelaporanDistribusiState extends State<PelaporanDistribusi> {
 
   Future<void> _submitData() async {
     try {
-      // Validate inputs
       if (_jumlahController.text.isEmpty ||
           _tanggalController.text.isEmpty ||
           _selectedSchoolId == null) {
@@ -72,13 +71,10 @@ class _PelaporanDistribusiState extends State<PelaporanDistribusi> {
         return;
       }
 
-      // Get school name from selected ID
       final schoolName = _schools[_selectedSchoolId] ?? '';
 
-      // Create a unique key for the new distribution report
       final newReportKey = _databaseRef.child('distribusi').push().key;
 
-      // Prepare data to save
       final reportData = {
         'jumlah_makanan': _jumlahController.text,
         'tanggal': _tanggalController.text,
@@ -87,15 +83,12 @@ class _PelaporanDistribusiState extends State<PelaporanDistribusi> {
         'timestamp': ServerValue.timestamp,
       };
 
-      // Save to Firebase
       await _databaseRef.child('distribusi/$newReportKey').set(reportData);
 
-      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Laporan berhasil dikirim!')),
       );
 
-      // Clear form
       _jumlahController.clear();
       _tanggalController.clear();
       setState(() {
@@ -126,7 +119,17 @@ class _PelaporanDistribusiState extends State<PelaporanDistribusi> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFDF3E4),
-      appBar: _buildAppBar(),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFFDF3E4),
+        elevation: 0,
+        title: Row(children: [Image.asset('assets/logo.png', height: 40)]),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Icon(Icons.person, color: Colors.orange[800]),
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -140,17 +143,45 @@ class _PelaporanDistribusiState extends State<PelaporanDistribusi> {
               ),
             ),
             const SizedBox(height: 24),
-            _inputField(
-              label: "Jumlah Makanan :",
-              hint: "Masukkan jumlah",
-              controller: _jumlahController,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Jumlah Makanan :", style: TextStyle(color: Colors.brown)),
+                const SizedBox(height: 4),
+                TextField(
+                  controller: _jumlahController,
+                  decoration: const InputDecoration(
+                    hintText: "Masukkan jumlah",
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
             ),
-            _inputField(
-              label: "Tanggal :",
-              hint: "mm/dd/yy",
-              controller: _tanggalController,
-              isDateField: true,
-              onTap: () => _selectDate(context),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Tanggal :", style: TextStyle(color: Colors.brown)),
+                const SizedBox(height: 4),
+                TextField(
+                  controller: _tanggalController,
+                  decoration: const InputDecoration(
+                    hintText: "mm/dd/yy",
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                  ),
+                  readOnly: true,
+                  onTap: () => _selectDate(context),
+                ),
+                const SizedBox(height: 12),
+              ],
             ),
             _schoolDropdown(),
             const SizedBox(height: 30),
@@ -169,7 +200,6 @@ class _PelaporanDistribusiState extends State<PelaporanDistribusi> {
           ],
         ),
       ),
-      bottomNavigationBar: _bottomNavBar(0),
     );
   }
 
@@ -210,63 +240,6 @@ class _PelaporanDistribusiState extends State<PelaporanDistribusi> {
           ),
         ),
         const SizedBox(height: 12),
-      ],
-    );
-  }
-
-  AppBar _buildAppBar() {
-    return AppBar(
-      backgroundColor: const Color(0xFFFDF3E4),
-      elevation: 0,
-      title: Row(children: [Image.asset('assets/logo.png', height: 40)]),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16.0),
-          child: Icon(Icons.person, color: Colors.orange[800]),
-        ),
-      ],
-    );
-  }
-
-  Widget _inputField({
-    required String label,
-    required String hint,
-    TextEditingController? controller,
-    bool isDateField = false,
-    VoidCallback? onTap,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(color: Colors.brown)),
-        const SizedBox(height: 4),
-        TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            hintText: hint,
-            border: const OutlineInputBorder(),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 8,
-            ),
-          ),
-          readOnly: isDateField,
-          onTap: onTap,
-        ),
-        const SizedBox(height: 12),
-      ],
-    );
-  }
-
-  Widget _bottomNavBar(int selectedIndex) {
-    return BottomNavigationBar(
-      currentIndex: selectedIndex,
-      backgroundColor: const Color(0xFFF05E23),
-      selectedItemColor: Colors.white,
-      unselectedItemColor: Colors.white70,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.chat_bubble), label: ''),
       ],
     );
   }
