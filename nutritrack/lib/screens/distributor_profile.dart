@@ -1,46 +1,152 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 
-class ProfileDistributor extends StatelessWidget {
-  const ProfileDistributor({super.key});
+class DistributorProfile extends StatefulWidget {
+  const DistributorProfile({super.key});
+
+  @override
+  State<DistributorProfile> createState() => _DistributorProfileState();
+}
+
+class _DistributorProfileState extends State<DistributorProfile> {
+  late DatabaseReference _userRef;
+  Map<dynamic, dynamic>? userData;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    final User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      _userRef = FirebaseDatabase.instance.ref().child('users').child(user.uid);
+      _fetchUserData();
+    }
+  }
+
+  Future<void> _fetchUserData() async {
+    try {
+      DatabaseEvent event = await _userRef.once();
+      if (mounted) {
+        setState(() {
+          userData = event.snapshot.value as Map<dynamic, dynamic>?;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error fetching user data: ${e.toString()}')),
+        );
+      }
+    }
+  }
+
+  Future<void> _signOut(BuildContext context) async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error signing out: ${e.toString()}')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    if (isLoading) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFFDF3E4),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (user == null || userData == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFFDF3E4),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('Distributor data not found'),
+              TextButton(
+                onPressed: () => _signOut(context),
+                child: const Text('Go to Login'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFFDF3E4),
+      appBar: AppBar(
+        title: const Text('Distributor Profile'),
+        backgroundColor: Color(0xFFF05E23),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: () => _navigateToEditProfile(context),
+          ),
+        ],
+      ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.account_circle, size: 80, color: Colors.orange),
+              const Icon(Icons.account_circle, size: 80, color: Color(0xFFF05E23)),
               const SizedBox(height: 16),
-              const Text(
-                "Jingga Catering",
-                style: TextStyle(
+              Text(
+                userData!['nama'] ?? 'No Name',
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: Colors.brown,
                 ),
               ),
-              const Text(
-                "foodMbg@gmail.com",
-                style: TextStyle(color: Colors.orange),
+              Text(
+                userData!['email'] ?? 'No Email',
+                style: const TextStyle(color: Color(0xFFF05E23)),
               ),
               const SizedBox(height: 20),
-              _profileField("Gender..."),
-              _profileField("Languages..."),
-              _profileField("Time Zone..."),
-              _profileField("Country..."),
+              _profileField(userData!['alamat'] ?? 'Address not set'),
+              _profileField(userData!['noTelp'] ?? 'Phone not set'),
+              _profileField('Role: ${userData!['role'] ?? 'Distributor'}'),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => _signOut(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFFF05E23),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Logout',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
       ),
-      bottomNavigationBar: _bottomNavBar(0),
     );
   }
 
-  Widget _profileField(String label) {
+  Widget _profileField(String value) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 10),
@@ -49,20 +155,11 @@ class ProfileDistributor extends StatelessWidget {
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(label, style: const TextStyle(color: Colors.grey)),
+      child: Text(value, style: const TextStyle(color: Colors.grey)),
     );
   }
 
-  Widget _bottomNavBar(int selectedIndex) {
-    return BottomNavigationBar(
-      currentIndex: selectedIndex,
-      backgroundColor: Colors.orange,
-      selectedItemColor: Colors.white,
-      unselectedItemColor: Colors.white70,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.chat_bubble), label: ''),
-      ],
-    );
+  void _navigateToEditProfile(BuildContext context) {
+    Navigator.pushNamed(context, '/edit-distributor-profile', arguments: userData);
   }
 }

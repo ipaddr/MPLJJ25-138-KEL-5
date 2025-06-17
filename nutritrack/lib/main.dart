@@ -46,23 +46,37 @@ class NutriTrackApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-        '/dashboard': (context) => MainNavigation(
-              userRole: (ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?)?['userRole'] ?? 'sekolah',
+        '/dashboard':
+            (context) => MainNavigation(
+              userRole:
+                  (ModalRoute.of(context)?.settings.arguments
+                      as Map<String, dynamic>?)?['userRole'] ??
+                  'sekolah',
             ),
-        '/admin-dashboard': (context) => AdminMainNavigation(
-              userRole: (ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?)?['userRole'] ?? 'admin',
+        '/admin-dashboard':
+            (context) => AdminMainNavigation(
+              userRole:
+                  (ModalRoute.of(context)?.settings.arguments
+                      as Map<String, dynamic>?)?['userRole'] ??
+                  'admin',
             ),
-        '/distributor-dashboard': (context) => DistributorMainNavigation(
-              userRole: (ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?)?['userRole'] ?? 'distributor',
+        '/distributor-dashboard':
+            (context) => DistributorMainNavigation(
+              userRole:
+                  (ModalRoute.of(context)?.settings.arguments
+                      as Map<String, dynamic>?)?['userRole'] ??
+                  'distributor',
             ),
       },
-      onUnknownRoute: (settings) => MaterialPageRoute(
-        builder: (context) => Scaffold(
-          body: Center(
-            child: Text('No route defined for ${settings.name}'),
+      onUnknownRoute:
+          (settings) => MaterialPageRoute(
+            builder:
+                (context) => Scaffold(
+                  body: Center(
+                    child: Text('No route defined for ${settings.name}'),
+                  ),
+                ),
           ),
-        ),
-      ),
     );
   }
 
@@ -72,9 +86,7 @@ class NutriTrackApp extends StatelessWidget {
       colorScheme: ColorScheme.fromSwatch(
         primarySwatch: Colors.orange,
         accentColor: const Color(0xFFFF8C42),
-      ).copyWith(
-        secondary: const Color(0xFF4CAF50),
-      ),
+      ).copyWith(secondary: const Color(0xFF4CAF50)),
       scaffoldBackgroundColor: const Color(0xFFFDF6F0),
       appBarTheme: const AppBarTheme(
         elevation: 0,
@@ -106,10 +118,7 @@ class NutriTrackApp extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ),
       textTheme: const TextTheme(
@@ -151,7 +160,8 @@ class AuthWrapper extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+                    onPressed:
+                        () => Navigator.pushReplacementNamed(context, '/login'),
                     child: const Text('Retry Login'),
                   ),
                 ],
@@ -162,19 +172,29 @@ class AuthWrapper extends StatelessWidget {
 
         if (snapshot.hasData) {
           return FutureBuilder<DataSnapshot>(
-            future: FirebaseDatabase.instance.ref().child('users/${snapshot.data!.uid}').get(),
+            future:
+                FirebaseDatabase.instance
+                    .ref()
+                    .child('users/${snapshot.data!.uid}')
+                    .get(),
             builder: (context, userSnapshot) {
               if (userSnapshot.connectionState == ConnectionState.waiting) {
                 return const SplashScreen();
               }
 
-              if (userSnapshot.hasError || !userSnapshot.hasData || userSnapshot.data!.value == null) {
+              if (userSnapshot.hasError ||
+                  !userSnapshot.hasData ||
+                  userSnapshot.data!.value == null) {
                 return Scaffold(
                   body: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error_outline, color: Colors.red, size: 50),
+                        const Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 50,
+                        ),
                         const SizedBox(height: 20),
                         const Text(
                           'Failed to load user data',
@@ -192,7 +212,9 @@ class AuthWrapper extends StatelessWidget {
                 );
               }
 
-              final userData = Map<String, dynamic>.from(userSnapshot.data!.value as Map<dynamic, dynamic>);
+              final userData = Map<String, dynamic>.from(
+                userSnapshot.data!.value as Map<dynamic, dynamic>,
+              );
               final userRole = userData['role'] ?? 'sekolah';
 
               switch (userRole) {
@@ -216,7 +238,7 @@ class AuthWrapper extends StatelessWidget {
 // Base Navigation for all roles
 abstract class BaseNavigation extends StatefulWidget {
   final String userRole;
-  
+
   const BaseNavigation({super.key, required this.userRole});
 }
 
@@ -242,9 +264,7 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard Sekolah'),
-      ),
+      appBar: AppBar(title: const Text('Dashboard Sekolah')),
       body: IndexedStack(index: _currentIndex, children: _pages),
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
@@ -322,9 +342,7 @@ class _AdminMainNavigationState extends State<AdminMainNavigation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard Admin'),
-      ),
+      appBar: AppBar(title: const Text('Admin')),
       body: IndexedStack(index: _currentIndex, children: _pages),
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
@@ -382,7 +400,8 @@ class DistributorMainNavigation extends BaseNavigation {
   const DistributorMainNavigation({super.key, required super.userRole});
 
   @override
-  State<DistributorMainNavigation> createState() => _DistributorMainNavigationState();
+  State<DistributorMainNavigation> createState() =>
+      _DistributorMainNavigationState();
 }
 
 class _DistributorMainNavigationState extends State<DistributorMainNavigation> {
@@ -391,15 +410,13 @@ class _DistributorMainNavigationState extends State<DistributorMainNavigation> {
   final List<Widget> _pages = [
     const DistributorDashboardPage(),
     const PelaporanDistribusi(),
-    const ProfileDistributor(),
+    const DistributorProfile(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dashboard Distributor'),
-      ),
+      appBar: AppBar(title: const Text('Distributor')),
       body: IndexedStack(index: _currentIndex, children: _pages),
       bottomNavigationBar: _buildBottomNavigationBar(),
     );
