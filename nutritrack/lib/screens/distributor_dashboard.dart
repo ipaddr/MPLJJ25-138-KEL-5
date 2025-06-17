@@ -3,91 +3,87 @@ import 'package:flutter/material.dart';
 class DistributorDashboardPage extends StatelessWidget {
   const DistributorDashboardPage({super.key});
 
-  @override
+@override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF3E4),
-      appBar: AppBar(),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
+      appBar: AppBar(
+        title: Row(
           children: [
-            const Text(
-              "Pelaporan Distribusi",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.brown,
-              ),
-            ),
-            const SizedBox(height: 24),
-            _inputField(label: "Jumlah Makanan :", hint: "Masukkan jumlah"),
-            _inputField(label: "Tanggal :", hint: "mm/dd/yy"),
-            _inputField(label: "Nama Sekolah :", hint: "Masukkan nama sekolah"),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                elevation: 4,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 40,
-                  vertical: 12,
+            Image.asset('assets/logo.png', height: 40, width: 40),
+            const SizedBox(width: 10),
+            const Text('Dashboard'),
+          ],
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 10),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Pemantauan Distribusi',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildMetricItem(
+                          'Diktim',
+                          '12.637',
+                          Theme.of(context).primaryColor,
+                        ),
+                        _buildMetricItem(
+                          'Dizetma',
+                          '13.637',
+                          const Color(0xFFFF8C42),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              child: const Text("Kirim"),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: _bottomNavBar(0),
     );
   }
 
-  Widget _buildAppBar() {
-    return AppBar(
-      backgroundColor: const Color(0xFFFDF3E4),
-      elevation: 0,
-      title: Row(children: [Image.asset('assets/logo.png', height: 40)]),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16.0),
-          child: Icon(Icons.person, color: Colors.orange[800]),
-        ),
-      ],
-    );
-  }
-
-  Widget _inputField({required String label, required String hint}) {
+  Widget _buildMetricItem(String title, String value, Color color) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.brown)),
-        const SizedBox(height: 4),
-        TextField(
-          decoration: InputDecoration(
-            hintText: hint,
-            border: const OutlineInputBorder(),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 8,
-            ),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: color.withOpacity(0.3)),
+          ),
+          child: Icon(Icons.analytics, size: 30, color: color),
+        ),
+        const SizedBox(height: 10),
+        Text(title, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+        const SizedBox(height: 5),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: color,
           ),
         ),
-        const SizedBox(height: 12),
-      ],
-    );
-  }
-
-  Widget _bottomNavBar(int selectedIndex) {
-    return BottomNavigationBar(
-      currentIndex: selectedIndex,
-      backgroundColor: Colors.orange,
-      selectedItemColor: Colors.white,
-      unselectedItemColor: Colors.white70,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.chat_bubble), label: ''),
       ],
     );
   }
