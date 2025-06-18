@@ -409,7 +409,7 @@ class _DistributorMainNavigationState extends State<DistributorMainNavigation> {
 
   final List<Widget> _pages = [
     const DistributorDashboardPage(),
-    const PelaporanDistribusi(),
+    const DistribusiDataPelaporan(),
     const DistributorProfile(),
   ];
 

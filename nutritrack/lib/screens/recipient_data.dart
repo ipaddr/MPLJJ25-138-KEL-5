@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 class RecipientDataPage extends StatefulWidget {
   const RecipientDataPage({super.key});
@@ -10,24 +11,37 @@ class RecipientDataPage extends StatefulWidget {
 
 class _RecipientDataPageState extends State<RecipientDataPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  List<User> _users = []; // Changed from UserInfo to User
+  final DatabaseReference _dbRef = FirebaseDatabase.instance.ref();
+  List<Map<String, dynamic>> _users = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadAuthUsers();
+    _loadUsersWithRoles();
   }
 
-  Future<void> _loadAuthUsers() async {
+  Future<void> _loadUsersWithRoles() async {
     try {
-      // In a real app, you would use Admin SDK or Cloud Function to get all users
-      // This example only shows the current user
-      User? currentUser = _auth.currentUser;
+      // Mendapatkan semua user dari Realtime Database yang memiliki role sekolah atau distributor
+      final snapshot = await _dbRef.child('users').once();
       
-      if (currentUser != null) {
+      if (snapshot.snapshot.value != null) {
+        final Map<dynamic, dynamic> usersMap = snapshot.snapshot.value as Map<dynamic, dynamic>;
+        final List<Map<String, dynamic>> filteredUsers = [];
+        
+        usersMap.forEach((key, value) {
+          final userData = Map<String, dynamic>.from(value);
+          if (userData['role'] == 'sekolah' || userData['role'] == 'distributor') {
+            filteredUsers.add({
+              'id': key,
+              ...userData,
+            });
+          }
+        });
+
         setState(() {
-          _users = [currentUser];
+          _users = filteredUsers;
           _isLoading = false;
         });
       } else {
@@ -94,6 +108,15 @@ class _RecipientDataPageState extends State<RecipientDataPage> {
                               ),
                               DataColumn(
                                 label: Text(
+                                  'Nama',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
                                   'Email',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
@@ -103,7 +126,7 @@ class _RecipientDataPageState extends State<RecipientDataPage> {
                               ),
                               DataColumn(
                                 label: Text(
-                                  'Provider',
+                                  'Role',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Theme.of(context).primaryColor,
@@ -112,7 +135,16 @@ class _RecipientDataPageState extends State<RecipientDataPage> {
                               ),
                               DataColumn(
                                 label: Text(
-                                  'Verified',
+                                  'Alamat',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).primaryColor,
+                                  ),
+                                ),
+                              ),
+                              DataColumn(
+                                label: Text(
+                                  'Status',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Theme.of(context).primaryColor,
@@ -126,20 +158,28 @@ class _RecipientDataPageState extends State<RecipientDataPage> {
                               return DataRow(
                                 cells: [
                                   DataCell(Text(index.toString())),
-                                  DataCell(Text(user.email ?? 'N/A')),
+                                  DataCell(Text(user['nama']?.toString() ?? 'N/A')),
+                                  DataCell(Text(user['email']?.toString() ?? 'N/A')),
                                   DataCell(Text(
-                                    user.providerData
-                                        .map((info) => info.providerId)
-                                        .join(', '),
+                                    user['role']?.toString().toUpperCase() ?? 'N/A',
+                                    style: TextStyle(
+                                      color: user['role'] == 'sekolah' 
+                                          ? Colors.blue 
+                                          : Colors.green,
+                                    ),
                                   )),
-                                  DataCell(Icon(
-                                    user.emailVerified
-                                        ? Icons.verified
-                                        : Icons.warning,
-                                    color: user.emailVerified
-                                        ? Colors.green
-                                        : Colors.orange,
-                                  )),
+                                  DataCell(Text(user['alamat']?.toString() ?? 'N/A')),
+                                  DataCell(
+                                    Chip(
+                                      label: Text(
+                                        user['status']?.toString().toUpperCase() ?? 'N/A',
+                                        style: const TextStyle(color: Colors.white),
+                                      ),
+                                      backgroundColor: user['status'] == 'active'
+                                          ? Colors.green
+                                          : Colors.red,
+                                    ),
+                                  ),
                                 ],
                               );
                             }).toList(),
