@@ -64,11 +64,16 @@ class _ReportDataPageState extends State<ReportDataPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: const Color(0xFFFDF3E4),
+        elevation: 0,
         title: Row(
           children: [
-            Image.asset('assets/logo.png', height: 40, width: 40),
-            const SizedBox(width: 10),
-            const Text('Data Laporan'),
+            Image.asset('assets/logo.png', height: 40),
+            const SizedBox(width: 8),
+            const Text(
+              "Data Laporan",
+              style: TextStyle(color: Colors.brown),
+            ),
           ],
         ),
       ),

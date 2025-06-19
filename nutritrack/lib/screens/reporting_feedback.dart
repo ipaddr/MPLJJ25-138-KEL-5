@@ -127,8 +127,18 @@ class _ReportFeedbackPageState extends State<ReportFeedbackPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Laporan & Feedback'),
-        centerTitle: true,
+        backgroundColor: const Color(0xFFFDF3E4),
+        elevation: 0,
+        title: Row(
+          children: [
+            Image.asset('assets/logo.png', height: 40),
+            const SizedBox(width: 8),
+            const Text(
+              "Laporan & Feedback",
+              style: TextStyle(color: Colors.brown),
+            ),
+          ],
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

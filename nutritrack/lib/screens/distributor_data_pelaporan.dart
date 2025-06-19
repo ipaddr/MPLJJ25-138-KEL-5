@@ -7,7 +7,8 @@ class DistribusiDataPelaporan extends StatefulWidget {
   const DistribusiDataPelaporan({super.key});
 
   @override
-  State<DistribusiDataPelaporan> createState() => _DistribusiDataPelaporanState();
+  State<DistribusiDataPelaporan> createState() =>
+      _DistribusiDataPelaporanState();
 }
 
 class _DistribusiDataPelaporanState extends State<DistribusiDataPelaporan> {
@@ -16,7 +17,7 @@ class _DistribusiDataPelaporanState extends State<DistribusiDataPelaporan> {
   final TextEditingController _jumlahController = TextEditingController();
   final TextEditingController _tanggalController = TextEditingController();
   final TextEditingController _keteranganController = TextEditingController();
-  
+
   String? _selectedSchoolId;
   Map<String, String> _schools = {};
   bool _isLoading = true;
@@ -30,7 +31,6 @@ class _DistribusiDataPelaporanState extends State<DistribusiDataPelaporan> {
 
   Future<void> _initializeApp() async {
     try {
-      // Pastikan user terautentikasi
       if (_auth.currentUser == null) {
         await _auth.signInAnonymously();
       }
@@ -38,23 +38,23 @@ class _DistribusiDataPelaporanState extends State<DistribusiDataPelaporan> {
     } catch (e) {
       _showError('Gagal memulai aplikasi: ${e.toString()}');
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _fetchSchools() async {
     try {
-      final snapshot = await _databaseRef.child('users')
-        .orderByChild('role')
-        .equalTo('sekolah')
-        .get();
+      final snapshot =
+          await _databaseRef
+              .child('users')
+              .orderByChild('role')
+              .equalTo('sekolah')
+              .get();
 
       if (snapshot.exists) {
+        final data = Map<String, dynamic>.from(snapshot.value as Map);
         final Map<String, String> schools = {};
-        final data = snapshot.value as Map<dynamic, dynamic>;
-        
+
         data.forEach((key, value) {
           if (value['status'] == 'active' && value['nama'] != null) {
             schools[key] = value['nama'].toString();
@@ -92,9 +92,7 @@ class _DistribusiDataPelaporanState extends State<DistribusiDataPelaporan> {
     } catch (e) {
       _showError('Gagal menyimpan data: ${e.toString()}');
     } finally {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-      }
+      setState(() => _isSubmitting = false);
     }
   }
 
@@ -129,32 +127,19 @@ class _DistribusiDataPelaporanState extends State<DistribusiDataPelaporan> {
       lastDate: DateTime(2100),
     );
     if (picked != null) {
-      setState(() {
-        _tanggalController.text = DateFormat('dd/MM/yyyy').format(picked);
-      });
+      _tanggalController.text = DateFormat('dd/MM/yyyy').format(picked);
     }
   }
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        action: SnackBarAction(
-          label: 'Tutup',
-          textColor: Colors.white,
-          onPressed: () => ScaffoldMessenger.of(context).hideCurrentSnackBar(),
-        ),
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
   void _showSuccess(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.green),
     );
   }
 
@@ -169,177 +154,150 @@ class _DistribusiDataPelaporanState extends State<DistribusiDataPelaporan> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFDF3E4),
       appBar: AppBar(
-        title: const Text('Pelaporan Distribusi'),
-        centerTitle: true,
+        backgroundColor: const Color(0xFFFDF3E4),
         elevation: 0,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildSchoolDropdown(),
-                  const SizedBox(height: 16),
-                  _buildNumberField(
-                    label: 'Jumlah Makanan',
-                    controller: _jumlahController,
-                    hint: 'Masukkan jumlah',
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildDateField(),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    label: 'Keterangan (Opsional)',
-                    controller: _keteranganController,
-                    hint: 'Masukkan keterangan tambahan',
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 24),
-                  _buildSubmitButton(),
-                ],
-              ),
+        title: Row(
+          children: [
+            Image.asset('assets/logo.png', height: 40),
+            const SizedBox(width: 8),
+            const Text(
+              "Laporan Distributor",
+              style: TextStyle(color: Colors.brown),
             ),
+          ],
+        ),
+      ),
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text(
+                          'Form Pelaporan',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.brown,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        _buildSchoolDropdown(),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          label: 'Jumlah Makanan',
+                          hint: 'Masukkan jumlah makanan',
+                          controller: _jumlahController,
+                          keyboardType: TextInputType.number,
+                          icon: Icons.fastfood,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDateField(),
+                        const SizedBox(height: 16),
+                        _buildTextField(
+                          label: 'Keterangan (Opsional)',
+                          hint: 'Masukkan catatan tambahan',
+                          controller: _keteranganController,
+                          icon: Icons.note_alt_outlined,
+                          maxLines: 3,
+                        ),
+                        const SizedBox(height: 24),
+                        _buildSubmitButton(),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
     );
   }
 
   Widget _buildSchoolDropdown() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Sekolah Tujuan',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              isExpanded: true,
-              hint: const Text('Pilih sekolah'),
-              value: _selectedSchoolId,
-              items: _schools.entries.map((entry) {
-                return DropdownMenuItem<String>(
-                  value: entry.key,
-                  child: Text(entry.value),
-                );
-              }).toList(),
-              onChanged: (value) => setState(() => _selectedSchoolId = value),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNumberField({
-    required String label,
-    required TextEditingController controller,
-    required String hint,
-    TextInputType? keyboardType,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            hintText: hint,
-            border: const OutlineInputBorder(),
-          ),
-          keyboardType: keyboardType,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDateField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Tanggal Distribusi',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _tanggalController,
-          decoration: const InputDecoration(
-            hintText: 'Pilih tanggal',
-            border: OutlineInputBorder(),
-            suffixIcon: Icon(Icons.calendar_today),
-          ),
-          readOnly: true,
-          onTap: () => _selectDate(context),
-        ),
-      ],
+    return DropdownButtonFormField<String>(
+      decoration: InputDecoration(
+        labelText: 'Sekolah Tujuan',
+        border: const OutlineInputBorder(),
+        prefixIcon: const Icon(Icons.school),
+      ),
+      value: _selectedSchoolId,
+      hint: const Text('Pilih sekolah'),
+      items:
+          _schools.entries.map((entry) {
+            return DropdownMenuItem<String>(
+              value: entry.key,
+              child: Text(entry.value),
+            );
+          }).toList(),
+      onChanged: (value) => setState(() => _selectedSchoolId = value),
     );
   }
 
   Widget _buildTextField({
     required String label,
-    required TextEditingController controller,
     required String hint,
+    required TextEditingController controller,
+    required IconData icon,
+    TextInputType? keyboardType,
     int? maxLines,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            hintText: hint,
-            border: const OutlineInputBorder(),
-          ),
-          maxLines: maxLines,
-        ),
-      ],
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      maxLines: maxLines ?? 1,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        border: const OutlineInputBorder(),
+        prefixIcon: Icon(icon),
+      ),
+    );
+  }
+
+  Widget _buildDateField() {
+    return TextField(
+      controller: _tanggalController,
+      readOnly: true,
+      onTap: () => _selectDate(context),
+      decoration: const InputDecoration(
+        labelText: 'Tanggal Distribusi',
+        hintText: 'Pilih tanggal',
+        border: OutlineInputBorder(),
+        prefixIcon: Icon(Icons.calendar_today),
+      ),
     );
   }
 
   Widget _buildSubmitButton() {
-    return ElevatedButton(
+    return ElevatedButton.icon(
       onPressed: _isSubmitting ? null : _submitData,
+      icon: const Icon(Icons.send),
+      label:
+          _isSubmitting
+              ? const SizedBox(
+                height: 18,
+                width: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              )
+              : const Text('KIRIM'),
       style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        backgroundColor: Theme.of(context).primaryColor,
-        disabledBackgroundColor: Colors.grey,
+        backgroundColor: Color(0xFFF05E23),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        textStyle: const TextStyle(fontWeight: FontWeight.bold),
       ),
-      child: _isSubmitting
-          ? const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            )
-          : const Text(
-              'SIMPAN DATA',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
     );
   }
 }

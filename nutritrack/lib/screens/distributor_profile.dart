@@ -2,151 +2,134 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 
-class DistributorProfile extends StatefulWidget {
-  const DistributorProfile({super.key});
+class ProfileDistributor extends StatefulWidget {
+  const ProfileDistributor({super.key});
 
   @override
-  State<DistributorProfile> createState() => _DistributorProfileState();
+  State<ProfileDistributor> createState() => _ProfileDistributorState();
 }
 
-class _DistributorProfileState extends State<DistributorProfile> {
-  late DatabaseReference _userRef;
-  Map<dynamic, dynamic>? userData;
-  bool isLoading = true;
+class _ProfileDistributorState extends State<ProfileDistributor> {
+  final _auth = FirebaseAuth.instance;
+  final _dbRef = FirebaseDatabase.instance.ref().child('users');
+  Map<String, dynamic>? _userData;
 
   @override
   void initState() {
     super.initState();
-    final User? user = FirebaseAuth.instance.currentUser;
+    _fetchUserProfile();
+  }
+
+  void _fetchUserProfile() async {
+    final user = _auth.currentUser;
     if (user != null) {
-      _userRef = FirebaseDatabase.instance.ref().child('users').child(user.uid);
-      _fetchUserData();
-    }
-  }
-
-  Future<void> _fetchUserData() async {
-    try {
-      DatabaseEvent event = await _userRef.once();
-      if (mounted) {
+      final snapshot = await _dbRef.child(user.uid).get();
+      if (snapshot.exists) {
         setState(() {
-          userData = event.snapshot.value as Map<dynamic, dynamic>?;
-          isLoading = false;
+          _userData = Map<String, dynamic>.from(snapshot.value as Map);
         });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error fetching user data: ${e.toString()}')),
-        );
       }
     }
   }
 
-  Future<void> _signOut(BuildContext context) async {
-    try {
-      await FirebaseAuth.instance.signOut();
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error signing out: ${e.toString()}')),
-      );
+  void _logout() async {
+    final confirmLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Keluar"),
+        content: const Text("Apakah Anda yakin ingin logout?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Batal"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Logout", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmLogout ?? false) {
+      await _auth.signOut();
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final User? user = FirebaseAuth.instance.currentUser;
-
-    if (isLoading) {
-      return Scaffold(
-        backgroundColor: const Color(0xFFFDF3E4),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (user == null || userData == null) {
-      return Scaffold(
-        backgroundColor: const Color(0xFFFDF3E4),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('Distributor data not found'),
-              TextButton(
-                onPressed: () => _signOut(context),
-                child: const Text('Go to Login'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return Scaffold(
       backgroundColor: const Color(0xFFFDF3E4),
       appBar: AppBar(
-        title: const Text('Distributor Profile'),
-        backgroundColor: Color(0xFFF05E23),
+        backgroundColor: const Color(0xFFFDF3E4),
+        elevation: 0,
+        title: Row(
+          children: [
+            Image.asset('assets/logo.png', height: 40),
+            const SizedBox(width: 8),
+            const Text("Profil Distributor", style: TextStyle(color: Colors.brown)),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () => _navigateToEditProfile(context),
+            icon: const Icon(Icons.logout, color: Colors.red),
+            onPressed: _logout,
+            tooltip: 'Logout',
           ),
         ],
       ),
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.account_circle, size: 80, color: Color(0xFFF05E23)),
-              const SizedBox(height: 16),
-              Text(
-                userData!['nama'] ?? 'No Name',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.brown,
-                ),
-              ),
-              Text(
-                userData!['email'] ?? 'No Email',
-                style: const TextStyle(color: Color(0xFFF05E23)),
-              ),
-              const SizedBox(height: 20),
-              _profileField(userData!['alamat'] ?? 'Address not set'),
-              _profileField(userData!['noTelp'] ?? 'Phone not set'),
-              _profileField('Role: ${userData!['role'] ?? 'Distributor'}'),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => _signOut(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFFF05E23),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+        child: _userData == null
+            ? const CircularProgressIndicator()
+            : Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.account_circle, size: 80, color: Colors.orange),
+                    const SizedBox(height: 16),
+                    Text(
+                      _userData!['nama'] ?? '-',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.brown,
+                      ),
                     ),
-                  ),
-                  child: const Text(
-                    'Logout',
-                    style: TextStyle(color: Colors.white),
-                  ),
+                    Text(
+                      _userData!['email'] ?? '-',
+                      style: const TextStyle(color: Colors.orange),
+                    ),
+                    const SizedBox(height: 20),
+                    _profileField("No. Telp: ${_userData!['noTelp'] ?? '-'}"),
+                    _profileField("Alamat: ${_userData!['alamat'] ?? '-'}"),
+                    _profileField("Role: ${_userData!['role'] ?? '-'}"),
+                    _profileField("Status: ${_userData!['status'] ?? '-'}"),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: _logout,
+                      icon: const Icon(Icons.logout),
+                      label: const Text("Logout"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
       ),
     );
   }
 
-  Widget _profileField(String value) {
+  Widget _profileField(String label) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 10),
@@ -155,11 +138,7 @@ class _DistributorProfileState extends State<DistributorProfile> {
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(value, style: const TextStyle(color: Colors.grey)),
+      child: Text(label, style: const TextStyle(color: Colors.grey)),
     );
-  }
-
-  void _navigateToEditProfile(BuildContext context) {
-    Navigator.pushNamed(context, '/edit-distributor-profile', arguments: userData);
   }
 }

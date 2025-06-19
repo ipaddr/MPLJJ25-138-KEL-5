@@ -10,185 +10,135 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  late DatabaseReference _userRef;
-  Map<dynamic, dynamic>? userData;
-  bool isLoading = true;
+  final _auth = FirebaseAuth.instance;
+  final _dbRef = FirebaseDatabase.instance.ref().child('users');
+  Map<String, dynamic>? _userData;
 
   @override
   void initState() {
     super.initState();
-    final User? user = FirebaseAuth.instance.currentUser;
+    _fetchUserProfile();
+  }
+
+  void _fetchUserProfile() async {
+    final user = _auth.currentUser;
     if (user != null) {
-      _userRef = FirebaseDatabase.instance.ref().child('users').child(user.uid);
-      _fetchUserData();
+      final snapshot = await _dbRef.child(user.uid).get();
+      if (snapshot.exists) {
+        setState(() {
+          _userData = Map<String, dynamic>.from(snapshot.value as Map);
+        });
+      }
     }
   }
 
-  Future<void> _fetchUserData() async {
-    try {
-      DatabaseEvent event = await _userRef.once();
-      setState(() {
-        userData = event.snapshot.value as Map<dynamic, dynamic>?;
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error fetching user data: ${e.toString()}')),
-      );
-    }
-  }
+  void _logout() async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Keluar"),
+        content: const Text("Apakah Anda yakin ingin logout?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text("Batal"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text("Logout", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
 
-  Future<void> _signOut(BuildContext context) async {
-    try {
-      await FirebaseAuth.instance.signOut();
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error signing out: ${e.toString()}')),
-      );
+    if (shouldLogout ?? false) {
+      await _auth.signOut();
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final User? user = FirebaseAuth.instance.currentUser;
-
-    if (isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    if (user == null || userData == null) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text('User not found'),
-              TextButton(
-                onPressed: () => _signOut(context),
-                child: const Text('Go to Login'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
     return Scaffold(
+      backgroundColor: const Color(0xFFFDF3E4),
       appBar: AppBar(
+        backgroundColor: const Color(0xFFFDF3E4),
+        elevation: 0,
         title: Row(
           children: [
-            Image.asset('assets/logo.png', height: 40, width: 40),
-            const SizedBox(width: 10),
-            const Text('Profile'),
+            Image.asset('assets/logo.png', height: 40),
+            const SizedBox(width: 8),
+            const Text('Profil Sekolah', style: TextStyle(color: Colors.brown)),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.red),
+            tooltip: 'Logout',
+            onPressed: _logout,
+          ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            CircleAvatar(
-              radius: 60,
-              backgroundColor: Colors.transparent,
-              child:
-                  user.photoURL != null
-                      ? ClipOval(child: Image.network(user.photoURL!))
-                      : Image.asset('assets/logo.png'),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              userData!['nama'] ?? user.displayName ?? 'No Name',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              userData!['email'] ?? user.email ?? 'No Email',
-              style: const TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Role: ${userData!['role'] ?? 'No Role'}',
-              style: const TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-            const SizedBox(height: 32),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
+      body: Center(
+        child: _userData == null
+            ? const CircularProgressIndicator()
+            : Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32.0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      'Address:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(userData!['alamat'] ?? 'No Address'),
+                    const Icon(Icons.account_circle, size: 80, color: Colors.orange),
                     const SizedBox(height: 16),
                     Text(
-                      'Phone:',
-                      style: TextStyle(
+                      _userData!['nama'] ?? '-',
+                      style: const TextStyle(
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Theme.of(context).primaryColor,
+                        color: Colors.brown,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(userData!['noTelp'] ?? 'No Phone Number'),
+                    Text(
+                      _userData!['email'] ?? '-',
+                      style: const TextStyle(color: Colors.orange),
+                    ),
+                    const SizedBox(height: 20),
+                    _profileField("No. Telp: ${_userData!['noTelp'] ?? '-'}"),
+                    _profileField("Alamat: ${_userData!['alamat'] ?? '-'}"),
+                    _profileField("Role: ${_userData!['role'] ?? '-'}"),
+                    _profileField("Status: ${_userData!['status'] ?? '-'}"),
                     const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => _navigateToEditProfile(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).primaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text(
-                          'Edit Profile',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () => _signOut(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text(
-                          'Logout',
-                          style: TextStyle(color: Colors.white),
+                    ElevatedButton.icon(
+                      onPressed: _logout,
+                      icon: const Icon(Icons.logout),
+                      label: const Text("Logout"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-          ],
-        ),
       ),
     );
   }
 
-  void _navigateToEditProfile(BuildContext context) {
-    Navigator.pushNamed(context, '/edit-profile', arguments: userData);
+  Widget _profileField(String label) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(label, style: const TextStyle(color: Colors.grey)),
+    );
   }
 }

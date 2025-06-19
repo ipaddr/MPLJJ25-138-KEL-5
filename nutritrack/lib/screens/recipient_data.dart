@@ -64,7 +64,20 @@ class _RecipientDataPageState extends State<RecipientDataPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Recipient Data')),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFFDF3E4),
+        elevation: 0,
+        title: Row(
+          children: [
+            Image.asset('assets/logo.png', height: 40),
+            const SizedBox(width: 8),
+            const Text(
+              "Data Penerima",
+              style: TextStyle(color: Colors.brown),
+            ),
+          ],
+        ),
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _users.isEmpty
@@ -74,23 +87,6 @@ class _RecipientDataPageState extends State<RecipientDataPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'NutriTrack',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'Recipient Data',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                      ),
                       const SizedBox(height: 16),
                       Card(
                         child: SingleChildScrollView(

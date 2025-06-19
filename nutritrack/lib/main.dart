@@ -10,6 +10,7 @@ import 'screens/admin_data_pelaporan.dart';
 import 'screens/admin_data_penerima.dart';
 import 'screens/admin_profile.dart';
 import 'screens/distributor_dashboard.dart';
+import 'screens/distributor_data.dart';
 import 'screens/distributor_data_pelaporan.dart';
 import 'screens/distributor_profile.dart';
 import 'screens/report_data.dart';
@@ -18,9 +19,12 @@ import 'screens/recipient_data.dart';
 import 'screens/user_profile.dart';
 import 'screens/splash_screen.dart';
 import 'firebase_options.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await initializeDateFormatting('id', null);
 
   try {
     await Firebase.initializeApp(
@@ -409,8 +413,9 @@ class _DistributorMainNavigationState extends State<DistributorMainNavigation> {
 
   final List<Widget> _pages = [
     const DistributorDashboardPage(),
+    const DistributorDataPage(),
     const DistribusiDataPelaporan(),
-    const DistributorProfile(),
+    const ProfileDistributor(),
   ];
 
   @override
@@ -449,6 +454,10 @@ class _DistributorMainNavigationState extends State<DistributorMainNavigation> {
             BottomNavigationBarItem(
               icon: Icon(Icons.dashboard_rounded),
               label: 'Dashboard',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.list_alt_rounded),
+              label: 'Data',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.assignment_rounded),
